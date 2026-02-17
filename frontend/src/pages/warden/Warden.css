@@ -1,0 +1,205 @@
+/* Warden.css */
+
+/* 1. Define Variables for Light Mode (Default) */
+:root {
+  --bg-primary: #ffffff;
+  --text-primary: #000000;
+  --card-bg: #f0f4ff; /* The light blueish card background */
+  --list-card-bg: #ffffff;
+  --box-bg: #f9f9f9;
+  --border-color: #ddd;
+  --hover-bg: #f5f5f5;
+  --dropdown-bg: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.08);
+}
+
+/* 2. Define Variables for Dark Mode */
+body.dark-mode {
+  --bg-primary: #121212;
+  --text-primary: #e0e0e0;
+  --card-bg: #1e1e1e;
+  --list-card-bg: #1e1e1e;
+  --box-bg: #252525;
+  --border-color: #444;
+  --hover-bg: #333;
+  --dropdown-bg: #333;
+  --shadow-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Apply global text color */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.warden-container {
+  padding: 20px;
+}
+
+.warden-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notification {
+  position: relative;
+  cursor: pointer;
+}
+
+.badge {
+  background: red;
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 30px;
+  background: var(--dropdown-bg); /* Changed to variable */
+  border: 1px solid var(--border-color); /* Changed to variable */
+  width: 250px;
+  z-index: 10;
+}
+
+.notification-item {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color); /* Changed to variable */
+  cursor: pointer;
+  color: var(--text-primary); /* Ensure text is visible */
+}
+
+.notification-item:hover {
+  background: var(--hover-bg); /* Changed to variable */
+}
+
+.warden-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.card {
+  background: var(--card-bg); /* Changed to variable */
+  padding: 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.warden-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.warden-table th,
+.warden-table td {
+  border: 1px solid var(--border-color); /* Changed to variable */
+  padding: 10px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.complaint-box,
+.outing-card,
+.profile-box {
+  background: var(--box-bg); /* Changed to variable */
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+.action-buttons button,
+.approve,
+.reject {
+  margin-right: 10px;
+  padding: 8px 12px;
+}
+
+.approve {
+  background: green;
+  color: white;
+}
+
+.reject {
+  background: red;
+  color: white;
+}
+
+/* BACK BUTTON */
+.back-btn {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+/* LIST */
+.list-container {
+  padding: 30px;
+}
+
+.list-card {
+  background: var(--list-card-bg); /* Changed to variable */
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px var(--shadow-color); /* Changed to variable */
+  color: var(--text-primary);
+}
+
+/* STATUS */
+.status {
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+  color: #000; /* Keep status text black for readability on bright badges */
+}
+
+.status.pending {
+  background: #ffeaa7;
+}
+
+.status.approved {
+  background: #55efc4;
+}
+
+.status.rejected {
+  background: #fab1a0;
+}
+
+.reject-text {
+  color: #d63031;
+  font-size: 14px;
+}
+
+/* BUTTONS */
+.action-buttons {
+  margin-top: 10px;
+}
+
+.approve-btn {
+  background: green;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.reject-btn {
+  background: red;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+}
