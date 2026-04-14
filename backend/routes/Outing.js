@@ -29,12 +29,32 @@ router.get("/", async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------------
+// ✅ NEW ROUTE: Get outings for a specific student (For Gate Pass)
+// MUST BE ABOVE "/:id" routes
+// -------------------------------------------------------------------
+router.get("/student/:studentId", async (req, res) => {
+  try {
+    const studentOutings = await Outing.find({ studentId: req.params.studentId }).sort({ createdAt: -1 });
+    res.json(studentOutings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // 3. PUT: Update Status (Approve/Reject)
 router.put("/:id", async (req, res) => {
   try {
+    const updateData = { status: req.body.status };
+    
+    // ✅ Save warden's response/reason if provided
+    if (req.body.wardenResponse) {
+      updateData.wardenResponse = req.body.wardenResponse;
+    }
+
     const updatedOuting = await Outing.findByIdAndUpdate(
       req.params.id,
-      { status: req.body.status },
+      updateData,
       { new: true }
     );
     res.json(updatedOuting);

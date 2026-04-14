@@ -1,48 +1,51 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import QRCode from "react-qr-code";
+
+// Register Chart.js elements
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function StudentDashboard() {
   const navigate = useNavigate();
-  const studentId = localStorage.getItem("studentId");
-
-  // Initialize state
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("appTheme") === "dark";
-  });
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("appTheme") === "dark");
+  const [studentName, setStudentName] = useState("Student");
   
-  const [recentComplaints, setRecentComplaints] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  // Data states
+  const [complaints, setComplaints] = useState([]);
+  const [outings, setOutings] = useState([]);
 
-  // Fetch Complaints & Generate Notifications
   useEffect(() => {
-    fetch("http://localhost:5000/api/complaints")
-      .then((res) => res.json())
-      .then((data) => {
-        const myComplaints = data.filter((c) => c.studentId === studentId);
-        
-        const recent = myComplaints.slice(-3).reverse();
-        setRecentComplaints(recent);
+    // Get student details from localStorage (adapt based on how you store login info)
+    const storedName = localStorage.getItem("studentName") || "Vemulapally Madhusri";
+    const studentId = localStorage.getItem("studentId");
+    setStudentName(storedName);
 
-        const updates = myComplaints
-          .filter(c => c.status && c.status.toLowerCase() !== "pending")
-          .map(c => ({
-            id: c._id,
-            message: `Your complaint regarding '${c.issue || c.type}' has been ${c.status}.`,
-            status: c.status,
-            date: c.date || "Recently" 
-          }))
-          .reverse();
+    // Fetch student's specific complaints and outings
+    // NOTE: Update these endpoints if your backend routes are different!
+    if (studentId) {
+      fetch(`http://localhost:5000/api/complaints/student/${studentId}`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setComplaints(data || []))
+        .catch(err => console.error(err));
 
-        setNotifications(updates);
-
-        const lastViewedCount = parseInt(localStorage.getItem("lastViewedNotificationCount") || "0");
-        const newUnread = Math.max(0, updates.length - lastViewedCount);
-        setUnreadCount(newUnread);
-      })
-      .catch((err) => console.error("Error fetching complaints:", err));
-  }, [studentId]);
+      fetch(`http://localhost:5000/api/outingrequests/student/${studentId}`)
+        .then(res => res.ok ? res.json() : [])
+        .then(data => setOutings(data || []))
+        .catch(err => console.error(err));
+    } else {
+      // DUMMY DATA for layout testing if backend isn't connected yet
+      setComplaints([
+        { issue: "Water", status: "Rejected" },
+        { issue: "Electricity", status: "Pending" },
+        { issue: "Cleaning", status: "Resolved" }
+      ]);
+      setOutings([
+        { reason: "Going Home", status: "Approved", date: "2026-04-15", id: "OUT-12345" }
+      ]);
+    }
+  }, []);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
@@ -50,237 +53,144 @@ function StudentDashboard() {
     localStorage.setItem("appTheme", newMode ? "dark" : "light");
   };
 
-  const handleBellClick = () => {
-    if (!showNotifications) {
-      setUnreadCount(0);
-      localStorage.setItem("lastViewedNotificationCount", notifications.length.toString());
-    }
-    setShowNotifications(!showNotifications);
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/");
   };
 
-  // Dynamic styles
+  // --- CHART DATA CALCULATIONS ---
+  const resolvedCount = complaints.filter(c => c.status?.toLowerCase() === "resolved").length;
+  const pendingCount = complaints.filter(c => c.status?.toLowerCase() === "pending").length;
+  const rejectedCount = complaints.filter(c => c.status?.toLowerCase() === "rejected").length;
+
+  const chartData = {
+    labels: ["Resolved", "Pending", "Rejected"],
+    datasets: [
+      {
+        data: [resolvedCount, pendingCount, rejectedCount],
+        backgroundColor: ["#4BC0C0", "#FFCE56", "#FF6384"], // Green, Yellow, Red
+        hoverOffset: 4,
+        borderWidth: 0
+      }
+    ]
+  };
+
+  // --- GATE PASS LOGIC ---
+  // Find the most recent APPROVED outing
+  const activeGatePass = outings.find(o => o.status?.toLowerCase() === "approved");
+
+  // STYLES matching your screenshot
   const styles = {
-    page: {
-      padding: "30px",
-      background: isDarkMode ? "#121212" : "#f4f6f8",
-      minHeight: "100vh",
-      color: isDarkMode ? "#ffffff" : "#000000",
-      transition: "all 0.3s ease",
-      position: "relative",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "30px",
-    },
-    backButton: {
-      padding: "8px 16px",
-      cursor: "pointer",
-      backgroundColor: isDarkMode ? "#333" : "#e0e0e0",
-      color: isDarkMode ? "#fff" : "#000",
-      border: "none",
-      borderRadius: "4px",
-      marginRight: "10px",
-    },
-    themeButton: {
-      padding: "8px 16px",
-      cursor: "pointer",
-      backgroundColor: isDarkMode ? "#444" : "#333",
-      color: "#fff",
-      border: "none",
-      borderRadius: "4px",
-      marginLeft: "10px",
-    },
-    bellContainer: {
-      position: "relative",
-      cursor: "pointer",
-      marginRight: "15px",
-      fontSize: "24px",
-      userSelect: "none",
-    },
-    badge: {
-      position: "absolute",
-      top: "-5px",
-      right: "-5px",
-      background: "red",
-      color: "white",
-      borderRadius: "50%",
-      padding: "2px 6px",
-      fontSize: "12px",
-      fontWeight: "bold",
-    },
-    popup: {
-      position: "absolute",
-      top: "70px",
-      right: "30px",
-      width: "300px",
-      background: isDarkMode ? "#1e1e1e" : "#fff",
-      border: isDarkMode ? "1px solid #444" : "1px solid #ccc",
-      borderRadius: "8px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-      zIndex: 1000,
-      padding: "15px",
-      display: showNotifications ? "block" : "none",
-    },
-    popupHeader: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      borderBottom: isDarkMode ? "1px solid #333" : "1px solid #eee",
-      paddingBottom: "10px",
-      marginBottom: "10px",
-    },
-    closeBtn: {
-      cursor: "pointer",
-      background: "transparent",
-      border: "none",
-      color: isDarkMode ? "#fff" : "#000",
-      fontSize: "16px",
-      fontWeight: "bold",
-    },
-    notifItem: {
-      padding: "10px",
-      borderBottom: isDarkMode ? "1px solid #333" : "1px solid #eee",
-      fontSize: "14px",
-    },
-    actions: {
-      display: "flex",
-      gap: "20px",
-      marginBottom: "40px",
-      flexWrap: "wrap",
-      alignItems: "flex-start", // Ensures items align to top
-    },
-    card: {
-      background: isDarkMode ? "#1e1e1e" : "#fff",
-      padding: "20px",
-      borderRadius: "8px",
-      width: "220px",
-      cursor: "pointer",
-      boxShadow: isDarkMode ? "0 2px 6px rgba(255,255,255,0.05)" : "0 2px 6px rgba(0,0,0,0.1)",
-      color: isDarkMode ? "#e0e0e0" : "#000",
-      transition: "background 0.3s ease",
-      height: "120px", // Fixed height to match alignment
-    },
-    section: {
-      background: isDarkMode ? "#1e1e1e" : "#fff",
-      padding: "20px",
-      borderRadius: "8px",
-      width: "400px", // Slightly reduced width to fit better
-      color: isDarkMode ? "#e0e0e0" : "#000",
-      transition: "background 0.3s ease",
-      // Removed marginTop so it sits inline
-    },
-    complaint: {
-      display: "flex",
-      justifyContent: "space-between",
-      padding: "10px 0",
-      borderBottom: isDarkMode ? "1px solid #333" : "1px solid #ddd",
-    },
-    pending: { color: "orange", fontWeight: "bold" },
-    progress: { color: "#4da6ff", fontWeight: "bold" },
-    resolved: { color: "green", fontWeight: "bold" },
-    rejected: { color: "red", fontWeight: "bold" },
-  };
-
-  const getStatusStyle = (status) => {
-    const s = status?.toLowerCase();
-    if (s === "pending") return styles.pending;
-    if (s === "in progress") return styles.progress;
-    if (s === "resolved" || s === "approved") return styles.resolved;
-    if (s === "rejected") return styles.rejected;
-    return {};
+    page: { padding: "30px", background: isDarkMode ? "#121212" : "#f4f6f8", minHeight: "100vh", color: isDarkMode ? "#ffffff" : "#000000", fontFamily: "sans-serif" },
+    header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "40px" },
+    btn: { padding: "8px 16px", cursor: "pointer", backgroundColor: isDarkMode ? "#333" : "#e0e0e0", color: isDarkMode ? "#fff" : "#000", border: "none", borderRadius: "4px", marginRight: "10px" },
+    themeBtn: { padding: "8px 16px", cursor: "pointer", backgroundColor: isDarkMode ? "#444" : "#333", color: "#fff", border: "none", borderRadius: "4px" },
+    actions: { display: "flex", gap: "20px", marginBottom: "40px", flexWrap: "wrap" },
+    card: { background: isDarkMode ? "#1e1e1e" : "#fff", padding: "20px", borderRadius: "8px", width: "220px", height: "120px", cursor: "pointer", border: isDarkMode ? "1px solid #333" : "1px solid #eee", transition: "0.3s" },
+    bottomGrid: { display: "flex", gap: "20px" },
+    box: { background: isDarkMode ? "#1e1e1e" : "#fff", padding: "20px", borderRadius: "8px", flex: 1, border: isDarkMode ? "1px solid #333" : "1px solid #eee", minHeight: "250px" }
   };
 
   return (
     <div style={styles.page}>
       {/* Header */}
       <div style={styles.header}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button style={styles.backButton} onClick={() => navigate("/")}>
-            Logout
-          </button>
-          <button style={styles.themeButton} onClick={toggleTheme}>
-            {isDarkMode ? "☀️ Light" : "🌙 Dark"}
-          </button>
+        <div>
+          <button style={styles.btn} onClick={handleLogout}>Logout</button>
+          <button style={styles.themeBtn} onClick={toggleTheme}>{isDarkMode ? "☀️ Light" : "🌙 Dark"}</button>
         </div>
-        
-        <h2>Welcome to Student Dashboard</h2>
-        
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={styles.bellContainer} onClick={handleBellClick}>
-            🔔
-            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
-          </div>
-          <span>Student</span>
+        <h2 style={{ margin: 0 }}>Welcome, {studentName}! 👋</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <span style={{ fontSize: "20px", cursor: "pointer" }}>🔔</span>
+          <Link to="/student/profile" style={{ color: "#4da6ff", textDecoration: "none", fontWeight: "bold" }}>👤 Profile</Link>
         </div>
       </div>
 
-      {/* Notification Popup */}
-      {showNotifications && (
-        <div style={styles.popup}>
-          <div style={styles.popupHeader}>
-            <strong>Notifications</strong>
-            <button style={styles.closeBtn} onClick={() => setShowNotifications(false)}>✕</button>
-          </div>
-          <div style={{ maxHeight: "300px", overflowY: "auto" }}>
-            {notifications.length === 0 ? (
-              <p style={{ fontSize: "13px", color: "#888" }}>No new updates.</p>
-            ) : (
-              notifications.map((n) => (
-                <div key={n.id} style={styles.notifItem}>
-                  {n.message}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Actions Container - Now includes Recent Complaints */}
+      {/* Main Action Cards */}
       <div style={styles.actions}>
         <div style={styles.card} onClick={() => navigate("/student/raise-complaint")}>
-          <h3>📝 Raise Complaint</h3>
-          <p>Report hostel related issues</p>
+          <h3>📄 Raise Complaint</h3>
+          <p style={{ fontSize: "14px", opacity: 0.8 }}>Report hostel related issues</p>
         </div>
-
         <div style={styles.card} onClick={() => navigate("/student/my-complaints")}>
           <h3>📄 My Complaints</h3>
-          <p>View status of submitted complaints</p>
+          <p style={{ fontSize: "14px", opacity: 0.8 }}>View status of submitted complaints</p>
         </div>
-
         <div style={styles.card} onClick={() => navigate("/student/outing-permission")}>
           <h3>🚪 Outing Permission</h3>
-          <p>Request permission to leave hostel</p>
+          <p style={{ fontSize: "14px", opacity: 0.8 }}>Request permission to leave hostel</p>
         </div>
-
         <div style={styles.card} onClick={() => navigate("/student/my-outings")}>
           <h3>📍 My Outings</h3>
-          <p>Check status of requests</p>
+          <p style={{ fontSize: "14px", opacity: 0.8 }}>Check status of requests</p>
         </div>
+      </div>
 
-        <div style={styles.card} onClick={() => navigate("/student/profile")}>
-          <h3>👤 Profile</h3>
-          <p>View student details</p>
-        </div>
-
-        {/* Recent Complaints - Moved INSIDE the flex container */}
-        <div style={styles.section}>
-          <h3>Recent Complaints</h3>
-
-          {recentComplaints.length === 0 ? (
-            <p style={{ color: isDarkMode ? "#aaa" : "#666" }}>
-              No recent complaints found.
-            </p>
+      {/* Bottom Features (Chart & Gate Pass) */}
+      <div style={styles.bottomGrid}>
+        {/* LEFT: Compact Complaint Chart */}
+        <div style={styles.box}>
+          <h3 style={{ borderBottom: "2px solid #36A2EB", paddingBottom: "10px", marginTop: 0 }}>📊 My Complaint Status</h3>
+          
+          {complaints.length === 0 ? (
+            <p style={{ color: "gray", textAlign: "center", marginTop: "40px" }}>No complaints raised yet.</p>
           ) : (
-            recentComplaints.map((c, index) => (
-              <div key={index} style={styles.complaint}>
-                <span>{c.issue || c.type}</span>
-                <span style={getStatusStyle(c.status)}>{c.status}</span>
-              </div>
-            ))
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "180px", marginTop: "10px" }}>
+              {/* ✅ Increased width from 180px to 280px so the words fit! */}
+              <div style={{ width: "280px", height: "180px" }}>
+                <Doughnut 
+                  data={chartData} 
+                  options={{ 
+                    maintainAspectRatio: false,
+                    plugins: { 
+                      legend: { 
+                        position: "right", 
+                        labels: { 
+                          color: isDarkMode ? "#fff" : "#000",
+                          boxWidth: 15, // ✅ Makes the color squares a bit smaller and neater
+                          padding: 15   // ✅ Adds space between the words
+                        } 
+                      } 
+                    }
+                  }} 
+                />
+               </div>
+            </div>
           )}
         </div>
+
+        {/* RIGHT: Digital Gate Pass / QR Code */}
+        <div style={styles.box}>
+          <h3 style={{ borderBottom: "2px solid #9966FF", paddingBottom: "10px", marginTop: 0 }}>📱 Digital Gate Pass</h3>
+          
+          {activeGatePass ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "20px", marginTop: "20px" }}>
+              {/* QR Code needs a white background to scan perfectly */}
+              <div style={{ background: "white", padding: "10px", borderRadius: "8px" }}>
+                <QRCode 
+                  value={`VALID_PASS_${activeGatePass.id || activeGatePass._id}_${studentName}`} 
+                  size={120} 
+                />
+              </div>
+              <div>
+                <h4 style={{ color: "#4BC0C0", margin: "0 0 10px 0" }}>✅ APPROVED</h4>
+                <p style={{ margin: "5px 0", fontSize: "14px" }}><strong>Name:</strong> {studentName}</p>
+                <p style={{ margin: "5px 0", fontSize: "14px" }}><strong>Reason:</strong> {activeGatePass.reason}</p>
+               <p style={{ margin: "5px 0", fontSize: "14px" }}>
+  <strong>Date:</strong> {new Date(activeGatePass.outingDate || activeGatePass.createdAt).toLocaleDateString()}
+</p>
+                <p style={{ margin: "10px 0 0 0", fontSize: "12px", color: "orange" }}>*Show this QR code at the main gate.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", marginTop: "40px", color: "gray" }}>
+              <span style={{ fontSize: "40px" }}>🚫</span>
+              <p>No active gate passes.</p>
+              <small>Apply for an outing permission. Once the Warden approves it, your QR code will generate here automatically.</small>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

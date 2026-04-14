@@ -23,7 +23,38 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 3. Get SINGLE complaint by ID (This was missing!)
+// ✅ Get counts of complaints by issue for the chart
+router.get("/stats/categories", async (req, res) => {
+  try {
+    const stats = await Complaint.aggregate([
+      {
+        $group: {
+          _id: "$issue", // Grouping by the 'issue' field
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching stats" });
+  }
+});
+
+// -------------------------------------------------------------------
+// ✅ NEW ROUTE: Get complaints for a specific student (For Chart)
+// MUST BE ABOVE "/:id"
+// -------------------------------------------------------------------
+router.get("/student/:studentId", async (req, res) => {
+  try {
+    // Find all complaints where the studentId matches the one in the URL
+    const studentComplaints = await Complaint.find({ studentId: req.params.studentId });
+    res.json(studentComplaints);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching student complaints", error: err.message });
+  }
+});
+
+// 3. Get SINGLE complaint by ID
 router.get("/:id", async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
@@ -36,20 +67,18 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 4. Update complaint status (Resolve/Reject) (This was also missing!)
+// 4. Update complaint status (Resolve/Reject)
 router.put("/:id", async (req, res) => {
   try {
     const { status, rejectionReason } = req.body;
     
-    // Find and update the complaint
     const updatedComplaint = await Complaint.findByIdAndUpdate(
       req.params.id,
       { 
         status: status,
-        // Only save rejection reason if it exists
         ...(rejectionReason && { rejectionReason }) 
       },
-      { new: true } // Return the updated document
+      { new: true }
     );
 
     if (!updatedComplaint) {

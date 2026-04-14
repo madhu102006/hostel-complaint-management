@@ -40,25 +40,26 @@ function WardenOutingRequests() {
     }
   };
 
-  // REJECT REQUEST
+  // ✅ FIXED: REJECT REQUEST - Now sends wardenResponse to backend
   const rejectRequest = async (id) => {
     const reason = prompt("Enter rejection reason:");
     if (!reason) return;
 
     try {
-      // Note: Currently backend only updates status. 
-      // If you want to save rejection reason, you need to update backend model too.
-      // For now, we just mark as Rejected.
       const response = await fetch(`http://localhost:5000/api/outingrequests/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "Rejected" }),
+        body: JSON.stringify({ 
+          status: "Rejected",
+          wardenResponse: reason  // ✅ NOW SENDING REASON TO BACKEND
+        }),
       });
 
       if (response.ok) {
+        const updatedRequest = await response.json();
         setRequests((prev) =>
           prev.map((r) =>
-            r._id === id ? { ...r, status: "Rejected", rejectReason: reason } : r
+            r._id === id ? updatedRequest : r
           )
         );
       }
@@ -109,9 +110,10 @@ function WardenOutingRequests() {
                 </span>
               </p>
 
-              {r.rejectReason && (
+              {/* ✅ FIXED: Show wardenResponse instead of rejectReason */}
+              {r.wardenResponse && (
                 <p className="reject-text">
-                  <strong>Rejected Reason:</strong> {r.rejectReason}
+                  <strong>Warden's Response:</strong> {r.wardenResponse}
                 </p>
               )}
 

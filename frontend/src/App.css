@@ -36,3 +36,37 @@
     transform: rotate(360deg);
   }
 }
+
+/* =========================================================
+   GLOBAL RESPONSIVE STYLES (Added to fix zoom & layout issues)
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+/* 1. Use this to wrap the main content of EVERY page (Dashboard, Profile, etc.) */
+.page-container {
+  width: 100%;
+  max-width: 1200px; /* Stops it from getting too wide at 75% zoom */
+  margin: 0 auto;    /* Centers the layout on large screens */
+  padding: 20px;
+}
+
+/* 2. Use this for the container holding your cards (Complaints, Outings) */
+.responsive-grid {
+  display: grid;
+  /* This automatically scales cards to fit the screen size and zoom level */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+  gap: 20px;
+  width: 100%;
+}
+
+/* 3. Use this for the individual cards inside the grid */
+.responsive-card {
+  width: 100%;
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}

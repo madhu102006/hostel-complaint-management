@@ -9,6 +9,7 @@ const StudentSchema = new mongoose.Schema({
   hostel: { type: String, required: true },
   roomNumber: { type: String, required: true },
   role: { type: String, default: "Student" },
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Student", StudentSchema);

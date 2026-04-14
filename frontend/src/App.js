@@ -14,65 +14,54 @@ import WardenComplaints from "./pages/warden/WardenComplaints";
 import ComplaintDetails from "./pages/warden/ComplaintDetails";
 import WardenOutingRequests from "./pages/warden/WardenOutingRequests";
 import WardenProfile from "./pages/warden/WardenProfile";
+import RegisteredStudents from "./pages/warden/RegisteredStudents";
 
-// Helper component to ensure theme is applied whenever you navigate
+// --- NEW ANALYTICS IMPORT ---
+import AnalyticsDashboard from "./pages/warden/AnalyticsDashboard"; 
+
 function ThemeSync() {
   const location = useLocation();
-  
   useEffect(() => {
-    // Check the saved theme from localStorage
     const savedTheme = localStorage.getItem("appTheme");
-    
-    // Apply the class to the body tag so CSS variables work
     if (savedTheme === "dark") {
       document.body.classList.add("dark-mode");
     } else {
       document.body.classList.remove("dark-mode");
     }
-  }, [location]); // Re-run this check every time the route (location) changes
-
+  }, [location]);
   return null;
 }
 
 function App() {
   return (
     <Router>
-      {/* This component runs in the background to keep your theme synced */}
       <ThemeSync /> 
-      
       <Routes>
-        {/* Login Page */}
+        {/* Auth */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Student Dashboard */}
-        <Route
-          path="/student/dashboard"
-          element={<StudentDashboard />}
-        />
-
-        {/* Raise Complaint Page */}
-        <Route
-          path="/student/raise-complaint"
-          element={<RaiseComplaint />}
-        />
-
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
+        {/* Student Section */}
+        <Route path="/student/dashboard" element={<StudentDashboard />} />
+        <Route path="/student/raise-complaint" element={<RaiseComplaint />} />
         <Route path="/student/my-complaints" element={<MyComplaints />} />
-
-        <Route
-          path="/student/outing-permission"
-          element={<OutingPermission />}
-        />
+        <Route path="/student/outing-permission" element={<OutingPermission />} />
         <Route path="/student/my-outings" element={<MyOutings />} />
         <Route path="/student/profile" element={<Profile />} />
 
+        {/* Warden Section */}
         <Route path="/warden/dashboard" element={<WardenDashboard />} />
         <Route path="/warden/complaints" element={<WardenComplaints />} />
         <Route path="/warden/complaints/:id" element={<ComplaintDetails />} />
         <Route path="/warden/outing-requests" element={<WardenOutingRequests />} />
         <Route path="/warden/profile" element={<WardenProfile />} />
+        <Route path="/warden/student-list" element={<RegisteredStudents />} />
+
+        {/* --- NEW FEATURE: ANALYTICS --- */}
+        <Route path="/warden/analytics" element={<AnalyticsDashboard />} />
+
+        {/* Admin Section */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

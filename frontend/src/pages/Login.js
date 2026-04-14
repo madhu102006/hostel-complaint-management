@@ -18,7 +18,7 @@ function Login() {
     // --- WARDEN LOGIN (Hardcoded) ---
     if (role === "admin") {
       if (userId === "admin" && password === "admin123") {
-        localStorage.setItem("wardenLoggedIn", "true"); // Optional: Remember warden is logged in
+        localStorage.setItem("wardenLoggedIn", "true");
         navigate("/warden/dashboard");
       } else {
         alert("Invalid Admin Credentials! Try ID: 'admin' and Pass: 'admin123'");
@@ -37,7 +37,9 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
+        // ✅ SAVE BOTH STUDENT ID AND NAME
         localStorage.setItem("studentId", userId);
+        localStorage.setItem("studentName", data.name || "Student"); // Save the name from backend
         navigate("/student/dashboard");
       } else {
         alert("Login Failed: " + data.message);
@@ -55,7 +57,10 @@ function Login() {
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
-      background: isDarkMode ? "#121212" : "#f2f2f2",
+      backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://upload.wikimedia.org/wikipedia/commons/5/58/KITS_Warangal.JPG')`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
       transition: "background 0.3s",
     },
     card: {
